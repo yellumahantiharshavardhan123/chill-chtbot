@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>AI Virtual Receptionist - College Enquiry</title>
     <style>
         body {
@@ -554,6 +554,7 @@
 
         // Monitor audio levels for voice activity with improved detection
         function startVoiceDetection() {
+            if (!analyser) return;
             const bufferLength = analyser.frequencyBinCount;
             const dataArray = new Uint8Array(bufferLength);
             let consecutiveVoiceFrames = 0;
@@ -774,8 +775,8 @@
                 document.getElementById('micBtn').textContent = '🎤';
                 document.getElementById('micBtn').title = 'Click to enable voice recognition';
                 updateAvatarState('idle');
-                if (isListening) {
-                    recognition.stop();
+                if (isListening && recognition) {
+                    try { recognition.stop(); } catch (e) { /* ignore */ }
                 }
                 addMessage('Voice recognition turned OFF. Click the microphone to turn it back on.', 'bot');
             } else {
@@ -804,16 +805,19 @@
 
         // Test microphone functionality
         function testMicrophone() {
-            if (!analyser) return;
+            if (!analyser) {
+                addMessage('⚠ Microphone analyser not ready. Please allow microphone access and try again.', 'bot');
+                return;
+            }
             
             let testCount = 0;
-            const maxTests = 50; // Test for 5 seconds
-            
+            const maxTests = 50; // Test ~5 seconds
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
             function checkAudio() {
                 if (testCount >= maxTests || !autoListening) return;
                 
-                const bufferLength = analyser.frequencyBinCount;
-                const dataArray = new Uint8Array(bufferLength);
                 analyser.getByteFrequencyData(dataArray);
                 
                 let sum = 0;
@@ -837,7 +841,7 @@
             setTimeout(() => {
                 addMessage('🎤 Testing microphone... Please speak or make a sound to test if I can hear you.', 'bot');
                 checkAudio();
-            }, 1000);
+            }, 300);
         }
 
         // Initialize
@@ -877,6 +881,7 @@
             const avatar = document.getElementById('avatar');
             const indicator = document.getElementById('statusIndicator');
             
+            // reset classes
             avatar.className = 'avatar';
             indicator.className = 'status-indicator';
             
@@ -930,7 +935,7 @@
         }
 
         function stopSpeaking() {
-            if (synthesis.speaking) {
+            if (synthesis && synthesis.speaking) {
                 synthesis.cancel();
                 isSpeaking = false;
                 updateAvatarState('idle');
@@ -948,27 +953,22 @@
             const speak = () => {
                 try {
                     currentUtterance = new SpeechSynthesisUtterance(text);
-                    currentUtterance.rate = 0.9;
-                    currentUtterance.pitch = 1.1;
-                    currentUtterance.volume = 0.8;
+                    currentUtterance.rate = 0.95;
+                    currentUtterance.pitch = 1.05;
+                    currentUtterance.volume = 1;
                     currentUtterance.lang = 'en-US';
                     
-                    // Try to use a female voice
+                    // Try to use a female voice (best-effort)
                     const voices = synthesis.getVoices();
                     console.log('Available voices:', voices.length);
                     
                     if (voices.length > 0) {
-                        // Look for female voices in order of preference
                         const femaleVoice = voices.find(voice => 
-                            voice.name.toLowerCase().includes('female') || 
-                            voice.name.includes('Samantha') || 
-                            voice.name.includes('Karen') ||
-                            voice.name.includes('Susan') ||
-                            voice.name.includes('Zira') ||
-                            voice.name.includes('Microsoft Aria') ||
-                            (voice.name.includes('Google') && voice.name.includes('US')) ||
-                            voice.name.includes('Alex')
-                        ) || voices.find(voice => voice.lang.startsWith('en')) || voices[0];
+                            (voice.name && voice.name.toLowerCase().includes('female')) ||
+                            (voice.name && (voice.name.includes('Samantha') || voice.name.includes('Karen') || voice.name.includes('Susan') || voice.name.includes('Zira') || voice.name.includes('Microsoft Aria'))) ||
+                            ((voice.name && voice.name.includes('Google') && voice.lang && voice.lang.includes('en')) ) ||
+                            (voice.name && voice.name.includes('Alex'))
+                        ) || voices.find(voice => voice.lang && voice.lang.startsWith('en')) || voices[0];
                         
                         if (femaleVoice) {
                             currentUtterance.voice = femaleVoice;
@@ -994,7 +994,6 @@
                         updateAvatarState('idle');
                     };
                     
-                    // Resume synthesis if paused (some browsers pause it)
                     if (synthesis.paused) {
                         synthesis.resume();
                     }
@@ -1013,9 +1012,7 @@
             if (voicesLoaded || synthesis.getVoices().length > 0) {
                 speak();
             } else {
-                loadVoices().then(() => {
-                    speak();
-                });
+                loadVoices().then(() => speak());
             }
         }
 
@@ -1032,7 +1029,7 @@
                 const response = getBotResponse(message);
                 addMessage(response, 'bot');
                 speakText(response);
-            }, 800);
+            }, 600);
         }
 
         function askQuestion(question) {
@@ -1040,22 +1037,42 @@
             sendMessage();
         }
 
+        // Safe DOM-based addMessage to avoid broken className string issue and prevent XSS
         function addMessage(text, sender) {
             const messagesContainer = document.getElementById('chatMessages');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = message ${sender};
-            
-            const avatar = sender === 'bot' ? '👩‍💼' : '👤';
-            
-            messageDiv.innerHTML = `
-                <div class="message-avatar">${avatar}</div>
-                <div>
-                    <div class="message-content">${text}</div>
-                    <div class="timestamp">${getCurrentTime()}</div>
-                </div>
-            `;
-            
-            messagesContainer.appendChild(messageDiv);
+            const wrapper = document.createElement('div');
+            wrapper.classList.add('message');
+            if (sender === 'user') wrapper.classList.add('user');
+            if (sender === 'bot') wrapper.classList.add('bot');
+
+            const avatarDiv = document.createElement('div');
+            avatarDiv.className = 'message-avatar';
+            avatarDiv.textContent = sender === 'bot' ? '👩‍💼' : '👤';
+
+            const contentWrapper = document.createElement('div');
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            // Use textContent to avoid HTML injection and preserve plain text
+            contentDiv.textContent = text;
+
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'timestamp';
+            timeDiv.textContent = getCurrentTime();
+
+            contentWrapper.appendChild(contentDiv);
+            contentWrapper.appendChild(timeDiv);
+
+            // For bot messages, avatar should be on left (order -1 handled by CSS), else keep avatar default
+            if (sender === 'bot') {
+                wrapper.appendChild(avatarDiv);
+                wrapper.appendChild(contentWrapper);
+            } else {
+                wrapper.appendChild(contentWrapper);
+                wrapper.appendChild(avatarDiv);
+            }
+
+            messagesContainer.appendChild(wrapper);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
@@ -1098,6 +1115,7 @@
         if (synthesis) {
             synthesis.onvoiceschanged = function() {
                 // Voices are now loaded
+                voicesLoaded = true;
             };
         }
     </script>
