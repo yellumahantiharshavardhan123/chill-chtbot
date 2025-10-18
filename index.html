@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Virtual Receptionist - College Enquiry</title>
+    <style>
+        body {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .receptionist-container {
+            display: flex;
+            height: 100vh;
+            position: relative;
+        }
+
+        .avatar-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .avatar-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin-bottom: 30px;
+        }
+
+        .avatar {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 120px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .avatar.speaking {
+            animation: pulse 1s infinite;
+            box-shadow: 0 20px 60px rgba(255, 154, 158, 0.5);
+        }
+
+        .avatar.listening {
+            animation: glow 2s infinite;
+            box-shadow: 0 20px 60px rgba(102, 126, 234, 0.5);
+        }
+
+        .avatar-face {
+            font-size: 80px;
+            transition: all 0.3s ease;
+        }
+
+        .avatar.speaking .avatar-face {
+            animation: talk 0.5s infinite;
+        }
+
+        .status-indicator {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #4CAF50;
+            border: 3px solid white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .status-indicator.listening {
+            background: #2196F3;
+            animation: pulse 1s infinite;
+        }
+
+        .status-indicator.speaking {
+            background: #FF5722;
+            animation: pulse 1s infinite;
+        }
+
+        .avatar-info {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .avatar-name {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .avatar-title {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+
+        .voice-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .voice-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .mic-btn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .mic-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .mic-btn.listening {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            animation: pulse 1s infinite;
+        }
+
+        .stop-btn {
+            background: linear-gradient(135deg, #ff5722, #e64a19);
+            color: white;
+        }
+
+        .stop-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .chat-section {
+            flex: 1;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            box-shadow: -5px 0 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .chat-header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .chat-header p {
+            margin: 8px 0 0 0;
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+            animation: slideIn 0.3s ease;
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-content {
+            max-width: 75%;
+            padding: 15px 20px;
+            border-radius: 20px;
+            font-size: 15px;
+            line-height: 1.5;
+            position: relative;
+        }
+
+        .message.bot .message-content {
+            background: white;
+            color: #333;
+            border-bottom-left-radius: 5px;
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #667eea;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            margin: 0 12px;
+            flex-shrink: 0;
+        }
+
+        .message.bot .message-avatar {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            order: -1;
+        }
+
+        .message.user .message-avatar {
+            background: #e9ecef;
+            color: #6c757d;
+        }
+
+        .timestamp {
+            font-size: 12px;
+            opacity: 0.6;
+            margin-top: 5px;
+        }
+
+        .voice-indicator {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            padding: 15px 20px;
+            background: #e3f2fd;
+            border-radius: 10px;
+            margin: 10px 0;
+            color: #1976d2;
+            font-size: 14px;
+        }
+
+        .voice-indicator.active {
+            display: flex;
+        }
+
+        .sound-waves {
+            display: flex;
+            gap: 3px;
+        }
+
+        .sound-wave {
+            width: 3px;
+            height: 20px;
+            background: #1976d2;
+            border-radius: 2px;
+            animation: wave 1s infinite;
+        }
+
+        .sound-wave:nth-child(2) { animation-delay: 0.1s; }
+        .sound-wave:nth-child(3) { animation-delay: 0.2s; }
+        .sound-wave:nth-child(4) { animation-delay: 0.3s; }
+
+        .chat-input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .chat-input-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .chat-input:focus {
+            border-color: #667eea;
+        }
+
+        .send-button {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s ease;
+        }
+
+        .send-button:hover {
+            transform: scale(1.05);
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .action-chip {
+            background: #e8f0fe;
+            color: #1565c0;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            border: 1px solid #bbdefb;
+            transition: all 0.2s ease;
+        }
+
+        .action-chip:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 20px 60px rgba(102, 126, 234, 0.3); }
+            50% { box-shadow: 0 20px 60px rgba(102, 126, 234, 0.7); }
+        }
+
+        @keyframes talk {
+            0%, 100% { transform: scaleY(1); }
+            50% { transform: scaleY(0.8); }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes wave {
+            0%, 100% { height: 10px; }
+            50% { height: 25px; }
+        }
+
+        @media (max-width: 768px) {
+            .receptionist-container {
+                flex-direction: column;
+            }
+            
+            .avatar-section {
+                flex: 0 0 auto;
+                padding: 20px;
+            }
+            
+            .avatar-container {
+                width: 200px;
+                height: 200px;
+                margin-bottom: 20px;
+            }
+            
+            .avatar {
+                font-size: 80px;
+            }
+            
+            .avatar-face {
+                font-size: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="receptionist-container">
+        <section class="avatar-section">
+            <div class="avatar-container">
+                <div class="avatar" id="avatar">
+                    <div class="avatar-face">👩‍💼</div>
+                    <div class="status-indicator" id="statusIndicator"></div>
+                </div>
+            </div>
+            
+            <div class="avatar-info">
+                <h2 class="avatar-name">ASSISTANT AI</h2>
+                <p class="avatar-title">Virtual College Receptionist</p>
+                <p style="font-size: 14px; opacity: 0.8;">🎤 Just start speaking - I'll listen automatically!</p>
+            </div>
+            
+            <div class="voice-controls">
+                <button class="voice-btn mic-btn" id="micBtn" onclick="toggleVoiceRecognition()">
+                    🎤
+                </button>
+                <button class="voice-btn stop-btn" id="stopBtn" onclick="stopSpeaking()">
+                    🔇
+                </button>
+            </div>
+        </section>
+        
+        <section class="chat-section">
+            <header class="chat-header">
+                <h1>🎓 College Information Center</h1>
+                <p>Ask ASSISTANT AI about courses, admissions, fees, and campus life!</p>
+            </header>
+            
+            <div class="chat-messages" id="chatMessages">
+                <div class="message bot">
+                    <div class="message-avatar">👩‍💼</div>
+                    <div>
+                        <div class="message-content">
+                            Hello! I'm ASSISTANT AI, your virtual college receptionist! 👋 I'm here to help you with any questions about our programs, admissions, facilities, and more. You can either type your questions or click the microphone to talk with me directly!
+                        </div>
+                        <div class="timestamp" id="welcomeTime"></div>
+                    </div>
+                </div>
+                
+                <div class="quick-actions">
+                    <div class="action-chip" onclick="askQuestion('Tell me about your courses')">📚 Courses</div>
+                    <div class="action-chip" onclick="askQuestion('How do I apply for admission?')">📝 Admissions</div>
+                    <div class="action-chip" onclick="askQuestion('What are the fees?')">💰 Fees</div>
+                    <div class="action-chip" onclick="askQuestion('Show me campus facilities')">🏫 Campus</div>
+                    <div class="action-chip" onclick="askQuestion('Tell me about placements')">💼 Jobs</div>
+                </div>
+                
+                <div class="voice-indicator" id="voiceIndicator">
+                    <div class="sound-waves">
+                        <div class="sound-wave"></div>
+                        <div class="sound-wave"></div>
+                        <div class="sound-wave"></div>
+                        <div class="sound-wave"></div>
+                    </div>
+                    <span id="voiceStatus">Listening...</span>
+                </div>
+            </div>
+            
+            <div class="chat-input-container">
+                <div class="chat-input-wrapper">
+                    <input 
+                        type="text" 
+                        class="chat-input" 
+                        id="chatInput" 
+                        placeholder="Type your question or use voice chat..."
+                        maxlength="500"
+                    >
+                    <button class="send-button" onclick="sendMessage()">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Voice recognition and synthesis setup
+        let recognition = null;
+        let synthesis = window.speechSynthesis;
+        let isListening = false;
+        let isSpeaking = false;
+        let currentUtterance = null;
+        let voicesLoaded = false;
+        let autoListening = false;
+        let audioContext = null;
+        let microphone = null;
+        let analyser = null;
+        let silenceTimer = null;
+
+        // Initialize automatic voice detection with better error handling
+        async function initVoiceDetection() {
+            try {
+                console.log('Requesting microphone access...');
+                
+                // Check if getUserMedia is supported
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error('getUserMedia not supported');
+                }
+                
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: true
+                });
+                
+                console.log('Microphone access granted');
+                
+                // Initialize audio context
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Resume audio context if suspended (required by some browsers)
+                if (audioContext.state === 'suspended') {
+                    await audioContext.resume();
+                }
+                
+                microphone = audioContext.createMediaStreamSource(stream);
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 512;
+                analyser.smoothingTimeConstant = 0.8;
+                microphone.connect(analyser);
+                
+                console.log('Audio analysis setup complete');
+                startVoiceDetection();
+                return true;
+            } catch (error) {
+                console.error('Voice detection initialization failed:', error);
+                let errorMsg = '🎤 Microphone Setup Issue: ';
+                
+                if (error.name === 'NotAllowedError' || error.message.includes('Permission denied')) {
+                    errorMsg += 'Please click the microphone icon in your browser\'s address bar and allow access, then refresh the page.';
+                } else if (error.name === 'NotFoundError') {
+                    errorMsg += 'No microphone detected. Please connect a microphone and try again.';
+                } else if (error.name === 'NotSupportedError') {
+                    errorMsg += 'Your browser doesn\'t support microphone access. Please use Chrome, Firefox, or Edge.';
+                } else {
+                    errorMsg += 'Unable to access microphone. Please check your browser settings and try again.';
+                }
+                
+                addMessage(errorMsg, 'bot');
+                return false;
+            }
+        }
+
+        // Monitor audio levels for voice activity with improved detection
+        function startVoiceDetection() {
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            let consecutiveVoiceFrames = 0;
+            let consecutiveSilenceFrames = 0;
+            const voiceThreshold = 25; // Lowered threshold for better sensitivity
+            const requiredVoiceFrames = 3; // Require multiple frames to avoid false positives
+            
+            function detectVoice() {
+                if (!autoListening || !analyser) {
+                    requestAnimationFrame(detectVoice);
+                    return;
+                }
+                
+                analyser.getByteFrequencyData(dataArray);
+                
+                // Calculate RMS (Root Mean Square) for better voice detection
+                let sum = 0;
+                for (let i = 0; i < bufferLength; i++) {
+                    sum += dataArray[i] * dataArray[i];
+                }
+                const rms = Math.sqrt(sum / bufferLength);
+                
+                // Voice activity detection
+                if (rms > voiceThreshold) {
+                    consecutiveVoiceFrames++;
+                    consecutiveSilenceFrames = 0;
+                    
+                    // Start listening if we detect voice for required frames
+                    if (consecutiveVoiceFrames >= requiredVoiceFrames && !isListening && !isSpeaking) {
+                        console.log('Voice detected (RMS:', rms, '), starting recognition');
+                        startListening();
+                        consecutiveVoiceFrames = 0;
+                    }
+                } else {
+                    consecutiveVoiceFrames = 0;
+                    consecutiveSilenceFrames++;
+                }
+                
+                requestAnimationFrame(detectVoice);
+            }
+            
+            console.log('Voice detection monitoring started');
+            detectVoice();
+        }
+
+        // Initialize speech recognition with better error handling
+        function initSpeechRecognition() {
+            try {
+                if ('webkitSpeechRecognition' in window) {
+                    recognition = new webkitSpeechRecognition();
+                } else if ('SpeechRecognition' in window) {
+                    recognition = new SpeechRecognition();
+                } else {
+                    console.log('Speech recognition not supported');
+                    return false;
+                }
+
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = 'en-US';
+                recognition.maxAlternatives = 1;
+                
+                recognition.onstart = function() {
+                    console.log('Speech recognition started');
+                    isListening = true;
+                    updateAvatarState('listening');
+                    document.getElementById('voiceIndicator').classList.add('active');
+                    document.getElementById('voiceStatus').textContent = 'Listening...';
+                    document.getElementById('micBtn').classList.add('listening');
+                };
+                
+                recognition.onresult = function(event) {
+                    console.log('Speech recognition result:', event);
+                    if (event.results && event.results.length > 0) {
+                        const transcript = event.results[0][0].transcript;
+                        console.log('Transcript:', transcript);
+                        document.getElementById('chatInput').value = transcript;
+                        sendMessage();
+                    }
+                };
+                
+                recognition.onend = function() {
+                    console.log('Speech recognition ended');
+                    isListening = false;
+                    updateAvatarState('idle');
+                    document.getElementById('voiceIndicator').classList.remove('active');
+                    document.getElementById('micBtn').classList.remove('listening');
+                    
+                    // Restart automatic listening after a brief pause
+                    if (autoListening && !isSpeaking) {
+                        setTimeout(() => {
+                            if (autoListening && !isListening && !isSpeaking) {
+                                // Ready to detect voice again
+                                updateAvatarState('idle');
+                            }
+                        }, 1000);
+                    }
+                };
+                
+                recognition.onerror = function(event) {
+                    console.log('Speech recognition error:', event.error);
+                    let errorMessage = 'Voice recognition error. ';
+                    
+                    switch(event.error) {
+                        case 'not-allowed':
+                            errorMessage += 'Please allow microphone access in your browser settings.';
+                            break;
+                        case 'no-speech':
+                            errorMessage += 'No speech detected. Please try again.';
+                            break;
+                        case 'network':
+                            errorMessage += 'Network error. Please check your connection.';
+                            break;
+                        default:
+                            errorMessage += 'Please try again or use text input.';
+                    }
+                    
+                    addMessage(errorMessage, 'bot');
+                    
+                    isListening = false;
+                    updateAvatarState('idle');
+                    document.getElementById('voiceIndicator').classList.remove('active');
+                    document.getElementById('micBtn').classList.remove('listening');
+                };
+
+                return true;
+            } catch (error) {
+                console.log('Error initializing speech recognition:', error);
+                return false;
+            }
+        }
+
+        // College responses database
+        const collegeResponses = {
+            'courses': {
+                keywords: ['course', 'courses', 'program', 'programs', 'degree', 'study', 'subjects'],
+                response: "We offer excellent programs! Our undergraduate courses include B.Tech in Computer Science, Mechanical, Electrical, and Civil Engineering, plus B.Sc in Physics, Chemistry, and Mathematics. For postgraduates, we have M.Tech, MBA, and MCA programs. We also offer diploma courses in engineering. Each program is designed with industry-relevant curriculum and hands-on learning. Would you like details about any specific program?"
+            },
+            'admission': {
+                keywords: ['admission', 'admissions', 'apply', 'application', 'entrance', 'eligibility', 'join'],
+                response: "I'd be happy to help with admissions! For B.Tech, we accept JEE Main and State CET scores. MBA admissions are based on CAT, MAT, or CMAT scores. Other programs follow merit-based selection. Applications open March 1st and close June 30th, with counseling from July 1st to 15th. The application fee is just 500 rupees. You can apply online through our official website. What specific program are you interested in?"
+            },
+            'fees': {
+                keywords: ['fee', 'fees', 'cost', 'price', 'tuition', 'money', 'payment', 'scholarship'],
+                response: "Our fee structure is quite reasonable! B.Tech programs range from 75,000 to 1,20,000 rupees annually. MBA costs between 85,000 to 1,50,000 rupees per year. BCA and MCA programs are 45,000 to 65,000 rupees annually. Additional costs include hostel at 40,000 rupees yearly and mess at 25,000 rupees. We offer merit-based scholarships up to 50% fee waiver, plus need-based assistance and government schemes. Would you like information about payment plans?"
+            },
+            'hostel': {
+                keywords: ['hostel', 'accommodation', 'room', 'facilities', 'campus', 'infrastructure', 'library'],
+                response: "Our campus facilities are fantastic! We have separate hostels for boys and girls with 2 or 3 sharing rooms, both AC and non-AC options. All rooms have 24/7 Wi-Fi and security. The campus includes modern laboratories, a digital library with over 50,000 books, smart classrooms, and a 500-capacity auditorium. For recreation, we have a sports complex, gym, cafeteria, and medical center. The hostel also has common rooms with TV and laundry facilities. Would you like to know about our virtual campus tour?"
+            },
+            'placements': {
+                keywords: ['placement', 'placements', 'job', 'jobs', 'career', 'companies', 'salary'],
+                response: "Our placement record is excellent! We achieved 95% placement rate last year with the highest package of 45 lakh rupees and average of 8.5 lakh rupees. Over 500 students were placed with top companies like TCS, Infosys, Wipro, L&T, Tata Motors, and leading banks like HDFC and ICICI. We also have partnerships with startups like Zomato and Paytm. Our placement cell provides pre-placement training, mock interviews, resume building workshops, and soft skills development. Are you interested in our placement preparation programs?"
+            },
+            'contact': {
+                keywords: ['contact', 'phone', 'email', 'address', 'location', 'visit', 'reach'],
+                response: "You can reach us easily! Our college is located at 123 Education Street, Knowledge City. For admissions, call +91-80-1234-5678, or for general inquiries, use +91-80-8765-4321. You can email us at admissions@abccollege.edu.in or info@abccollege.edu.in. Our office hours are Monday to Friday, 9 AM to 5 PM, and Saturday 9 AM to 1 PM. Would you like directions to visit our campus?"
+            }
+        };
+
+        // Initialize voices
+        function loadVoices() {
+            return new Promise((resolve) => {
+                let voices = synthesis.getVoices();
+                if (voices.length > 0) {
+                    voicesLoaded = true;
+                    console.log('Voices loaded:', voices.length);
+                    resolve(voices);
+                } else {
+                    synthesis.onvoiceschanged = () => {
+                        voices = synthesis.getVoices();
+                        voicesLoaded = true;
+                        console.log('Voices loaded after change:', voices.length);
+                        resolve(voices);
+                    };
+                }
+            });
+        }
+
+        // Start listening function for automatic voice detection
+        function startListening() {
+            if (!recognition || isListening || isSpeaking) return;
+            
+            try {
+                recognition.start();
+            } catch (error) {
+                console.log('Error starting recognition:', error);
+            }
+        }
+
+        // Request microphone permission explicitly
+        async function requestMicrophonePermission() {
+            try {
+                // First check if we already have permission
+                const permission = await navigator.permissions.query({ name: 'microphone' });
+                console.log('Microphone permission status:', permission.state);
+                
+                if (permission.state === 'granted') {
+                    return await initVoiceDetection();
+                } else if (permission.state === 'prompt') {
+                    // Request permission by trying to access microphone
+                    return await initVoiceDetection();
+                } else {
+                    // Permission denied
+                    addMessage('🚫 Microphone access is blocked. Please click the microphone icon in your browser\'s address bar, select "Allow", and refresh the page.', 'bot');
+                    return false;
+                }
+            } catch (error) {
+                console.log('Permission API not supported, trying direct access');
+                return await initVoiceDetection();
+            }
+        }
+
+        // Toggle automatic voice detection with testing
+        function toggleAutoListening() {
+            if (autoListening) {
+                autoListening = false;
+                document.getElementById('micBtn').textContent = '🎤';
+                document.getElementById('micBtn').title = 'Click to enable voice recognition';
+                updateAvatarState('idle');
+                if (isListening) {
+                    recognition.stop();
+                }
+                addMessage('Voice recognition turned OFF. Click the microphone to turn it back on.', 'bot');
+            } else {
+                addMessage('🎤 Requesting microphone access... Please click "Allow" when prompted by your browser.', 'bot');
+                
+                requestMicrophonePermission().then(success => {
+                    if (success) {
+                        autoListening = true;
+                        document.getElementById('micBtn').textContent = '🔴';
+                        document.getElementById('micBtn').title = 'Automatic voice detection ON - Just speak!';
+                        updateAvatarState('idle');
+                        
+                        // Test microphone immediately
+                        testMicrophone();
+                        
+                        addMessage('✅ Microphone access granted! Voice recognition is now active. Just start speaking and I\'ll listen automatically. Try saying "Hello" to test it!', 'bot');
+                    } else {
+                        // Fallback to manual mode
+                        document.getElementById('micBtn').textContent = '🎤';
+                        document.getElementById('micBtn').title = 'Click to speak (manual mode)';
+                        addMessage('⚠ Automatic voice detection unavailable. You can still use manual mode - click the microphone button each time you want to speak.', 'bot');
+                    }
+                });
+            }
+        }
+
+        // Test microphone functionality
+        function testMicrophone() {
+            if (!analyser) return;
+            
+            let testCount = 0;
+            const maxTests = 50; // Test for 5 seconds
+            
+            function checkAudio() {
+                if (testCount >= maxTests || !autoListening) return;
+                
+                const bufferLength = analyser.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+                analyser.getByteFrequencyData(dataArray);
+                
+                let sum = 0;
+                for (let i = 0; i < bufferLength; i++) {
+                    sum += dataArray[i] * dataArray[i];
+                }
+                const rms = Math.sqrt(sum / bufferLength);
+                
+                console.log('Microphone test - Audio level:', rms);
+                
+                if (rms > 10) {
+                    console.log('✅ Microphone is detecting audio input');
+                    addMessage('🎤 Microphone test successful! I can hear audio input. Speak clearly and I\'ll respond automatically.', 'bot');
+                    return;
+                }
+                
+                testCount++;
+                setTimeout(checkAudio, 100);
+            }
+            
+            setTimeout(() => {
+                addMessage('🎤 Testing microphone... Please speak or make a sound to test if I can hear you.', 'bot');
+                checkAudio();
+            }, 1000);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('welcomeTime').textContent = getCurrentTime();
+            document.getElementById('chatInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+            
+            // Set initial avatar state
+            updateAvatarState('idle');
+            
+            // Initialize speech recognition
+            const speechSupported = initSpeechRecognition();
+            if (!speechSupported) {
+                document.getElementById('micBtn').style.opacity = '0.5';
+                document.getElementById('micBtn').title = 'Voice recognition not supported in this browser';
+                addMessage('⚠ Voice recognition is not supported in your browser. Please use Chrome, Edge, or Safari for voice features.', 'bot');
+            } else {
+                document.getElementById('micBtn').title = 'Click to enable voice recognition';
+                addMessage('🎤 Voice recognition is ready! Click the microphone button to start voice chat.', 'bot');
+            }
+            
+            // Initialize voice synthesis
+            if ('speechSynthesis' in window) {
+                loadVoices();
+            }
+        });
+
+        function getCurrentTime() {
+            return new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        }
+
+        function updateAvatarState(state) {
+            const avatar = document.getElementById('avatar');
+            const indicator = document.getElementById('statusIndicator');
+            
+            avatar.className = 'avatar';
+            indicator.className = 'status-indicator';
+            
+            if (state === 'listening') {
+                avatar.classList.add('listening');
+                indicator.classList.add('listening');
+            } else if (state === 'speaking') {
+                avatar.classList.add('speaking');
+                indicator.classList.add('speaking');
+            }
+        }
+
+        function toggleVoiceRecognition() {
+            if (!recognition) {
+                addMessage('❌ Voice recognition is not supported in your browser. Please use Chrome, Edge, or Safari for voice features.', 'bot');
+                return;
+            }
+            
+            // If automatic listening is off, try manual voice recognition
+            if (!autoListening) {
+                if (isListening) {
+                    // Stop current listening
+                    try {
+                        recognition.stop();
+                        addMessage('🔇 Voice recognition stopped.', 'bot');
+                    } catch (error) {
+                        console.log('Error stopping recognition:', error);
+                    }
+                } else {
+                    // Start manual listening - no microphone permission needed for speech recognition
+                    addMessage('🎤 Click the microphone and speak your question! (Manual mode)', 'bot');
+                    startManualListening();
+                }
+            } else {
+                // Toggle automatic listening mode
+                toggleAutoListening();
+            }
+        }
+
+        // Manual voice recognition (one-time listening)
+        function startManualListening() {
+            if (!recognition || isListening || isSpeaking) return;
+            
+            try {
+                recognition.start();
+                console.log('Manual voice recognition started');
+            } catch (error) {
+                console.log('Error starting manual recognition:', error);
+                addMessage('Voice recognition error. Please try again or check your microphone settings.', 'bot');
+            }
+        }
+
+        function stopSpeaking() {
+            if (synthesis.speaking) {
+                synthesis.cancel();
+                isSpeaking = false;
+                updateAvatarState('idle');
+            }
+        }
+
+        function speakText(text) {
+            if (!synthesis || !('speechSynthesis' in window)) {
+                console.log('Speech synthesis not supported');
+                return;
+            }
+            
+            stopSpeaking();
+            
+            const speak = () => {
+                try {
+                    currentUtterance = new SpeechSynthesisUtterance(text);
+                    currentUtterance.rate = 0.9;
+                    currentUtterance.pitch = 1.1;
+                    currentUtterance.volume = 0.8;
+                    currentUtterance.lang = 'en-US';
+                    
+                    // Try to use a female voice
+                    const voices = synthesis.getVoices();
+                    console.log('Available voices:', voices.length);
+                    
+                    if (voices.length > 0) {
+                        // Look for female voices in order of preference
+                        const femaleVoice = voices.find(voice => 
+                            voice.name.toLowerCase().includes('female') || 
+                            voice.name.includes('Samantha') || 
+                            voice.name.includes('Karen') ||
+                            voice.name.includes('Susan') ||
+                            voice.name.includes('Zira') ||
+                            voice.name.includes('Microsoft Aria') ||
+                            (voice.name.includes('Google') && voice.name.includes('US')) ||
+                            voice.name.includes('Alex')
+                        ) || voices.find(voice => voice.lang.startsWith('en')) || voices[0];
+                        
+                        if (femaleVoice) {
+                            currentUtterance.voice = femaleVoice;
+                            console.log('Using voice:', femaleVoice.name);
+                        }
+                    }
+                    
+                    currentUtterance.onstart = function() {
+                        console.log('Speech started');
+                        isSpeaking = true;
+                        updateAvatarState('speaking');
+                    };
+                    
+                    currentUtterance.onend = function() {
+                        console.log('Speech ended');
+                        isSpeaking = false;
+                        updateAvatarState('idle');
+                    };
+                    
+                    currentUtterance.onerror = function(event) {
+                        console.log('Speech synthesis error:', event.error);
+                        isSpeaking = false;
+                        updateAvatarState('idle');
+                    };
+                    
+                    // Resume synthesis if paused (some browsers pause it)
+                    if (synthesis.paused) {
+                        synthesis.resume();
+                    }
+                    
+                    synthesis.speak(currentUtterance);
+                    console.log('Speech synthesis started');
+                    
+                } catch (error) {
+                    console.log('Speech synthesis error:', error);
+                    isSpeaking = false;
+                    updateAvatarState('idle');
+                }
+            };
+            
+            // Wait for voices to load if needed
+            if (voicesLoaded || synthesis.getVoices().length > 0) {
+                speak();
+            } else {
+                loadVoices().then(() => {
+                    speak();
+                });
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            addMessage(message, 'user');
+            input.value = '';
+            
+            setTimeout(() => {
+                const response = getBotResponse(message);
+                addMessage(response, 'bot');
+                speakText(response);
+            }, 800);
+        }
+
+        function askQuestion(question) {
+            document.getElementById('chatInput').value = question;
+            sendMessage();
+        }
+
+        function addMessage(text, sender) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = message ${sender};
+            
+            const avatar = sender === 'bot' ? '👩‍💼' : '👤';
+            
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${avatar}</div>
+                <div>
+                    <div class="message-content">${text}</div>
+                    <div class="timestamp">${getCurrentTime()}</div>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function getBotResponse(userMessage) {
+            const message = userMessage.toLowerCase();
+            
+            // Greetings
+            if (message.includes('hello') || message.includes('hi') || message.includes('hey')) {
+                return "Hello there! I'm ASSISTANT AI, and I'm delighted to meet you! I'm here to help you learn everything about our wonderful college. What would you like to know about our courses, admissions, or campus life?";
+            }
+            
+            if (message.includes('thank') || message.includes('thanks')) {
+                return "You're absolutely welcome! I'm so happy I could help you today. Please don't hesitate to ask if you have any more questions about our college. I'm always here to assist you!";
+            }
+            
+            if (message.includes('bye') || message.includes('goodbye')) {
+                return "It was wonderful talking with you today! I hope I've been helpful in answering your questions about our college. Feel free to come back anytime you need more information. Best wishes for your educational journey!";
+            }
+            
+            // Check FAQ responses
+            for (const [category, data] of Object.entries(collegeResponses)) {
+                if (data.keywords.some(keyword => message.includes(keyword))) {
+                    return data.response;
+                }
+            }
+            
+            // Default responses
+            const defaultResponses = [
+                "That's a great question! I specialize in helping with college information like our academic programs, admission procedures, fee structure, campus facilities, and career opportunities. What specific aspect would you like to explore?",
+                
+                "I'd love to help you with that! I can provide detailed information about our courses, admission requirements, fees, hostel facilities, placement records, and contact details. Which topic interests you most?",
+                
+                "Thank you for asking! While I focus on college-related queries, I'm here to help you understand everything about our institution. You can ask me about academics, admissions, campus life, or career prospects. What would you like to know?"
+            ];
+            
+            return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
+        }
+
+        // Load voices when available
+        if (synthesis) {
+            synthesis.onvoiceschanged = function() {
+                // Voices are now loaded
+            };
+        }
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98f81894c7b747e2',t:'MTc2MDYyMzM2OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
